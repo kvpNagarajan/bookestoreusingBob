@@ -107,7 +107,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Product findActive(Long id) {
-        return productRepository.findById(id)
+        return productRepository.findByIdWithCategory(id)
                 .filter(p -> p.getStatus() == ProductStatus.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }

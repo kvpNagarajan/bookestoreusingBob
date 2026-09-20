@@ -14,22 +14,30 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    Page<Product> findByStatus(ProductStatus status, Pageable pageable);
+    // Always JOIN FETCH category to avoid LazyInitializationException in toResponse()
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.status = :status")
+    Page<Product> findByStatus(@Param("status") ProductStatus status, Pageable pageable);
 
-    Page<Product> findByCategoryIdAndStatus(Long categoryId, ProductStatus status, Pageable pageable);
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.category.id = :categoryId AND p.status = :status")
+    Page<Product> findByCategoryIdAndStatus(@Param("categoryId") Long categoryId,
+                                            @Param("status") ProductStatus status,
+                                            Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " +
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.status = 'ACTIVE' AND " +
            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(p.author) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(p.publisher) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND p.category.id = :categoryId " +
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.status = 'ACTIVE' AND p.category.id = :categoryId " +
            "ORDER BY p.averageRating DESC")
     List<Product> findRelatedProducts(@Param("categoryId") Long categoryId, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
     List<Product> findLatestProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category WHERE p.id = :id")
+    java.util.Optional<Product> findByIdWithCategory(@Param("id") Long id);
 
     boolean existsByIsbn(String isbn);
 }
