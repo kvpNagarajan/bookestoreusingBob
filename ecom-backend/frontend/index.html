@@ -116,6 +116,46 @@
     .summary-row.total { font-weight:700; font-size:1.1rem; border-top:1px solid var(--border);
                          padding-top:.75rem; margin-top:.5rem; }
 
+    /* ── CHECKOUT STEPPER ── */
+    .stepper { display:flex; align-items:center; gap:0; margin-bottom:2rem; }
+    .step { display:flex; align-items:center; gap:.5rem; font-size:.88rem; font-weight:600; color:var(--muted); }
+    .step .num { width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
+                 display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; background:var(--bg); }
+    .step.active { color:var(--primary); }
+    .step.active .num { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .step.done .num { background:var(--success); color:#fff; border-color:var(--success); }
+    .step.done { color:var(--success); }
+    .step-line { flex:1; height:2px; background:var(--border); margin:0 .5rem; min-width:30px; }
+    .step-line.done { background:var(--success); }
+
+    /* Payment method cards */
+    .pay-methods { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.75rem; margin:.75rem 0 1.25rem; }
+    .pay-card { border:2px solid var(--border); border-radius:var(--radius); padding:.9rem .75rem;
+                text-align:center; cursor:pointer; transition:all .15s; background:var(--card); }
+    .pay-card:hover { border-color:var(--primary); }
+    .pay-card.selected { border-color:var(--primary); background:#edf5ff; }
+    .pay-card .pay-icon { font-size:1.8rem; margin-bottom:.35rem; }
+    .pay-card .pay-name { font-size:.8rem; font-weight:600; color:var(--text); }
+    .pay-card.selected .pay-name { color:var(--primary); }
+
+    /* Gift points */
+    .gift-box { background:#f6f2ff; border:1px solid #d4b0ff; border-radius:var(--radius);
+                padding:.9rem 1rem; margin-bottom:1rem; display:flex; align-items:center; gap:.75rem; }
+    .gift-box .gift-icon { font-size:1.5rem; }
+    .gift-box label { font-size:.88rem; font-weight:600; color:#6929c4; display:block; margin-bottom:.3rem; }
+    .gift-box input[type=range] { width:100%; accent-color:#6929c4; }
+
+    /* Order confirmation */
+    .confirm-wrap { text-align:center; padding:3rem 1.5rem; }
+    .confirm-wrap .check { font-size:4rem; margin-bottom:1rem; }
+    .confirm-wrap h2 { font-size:1.8rem; font-weight:700; color:var(--success); margin-bottom:.5rem; }
+    .confirm-wrap p { color:var(--muted); margin-bottom:1.5rem; }
+    .confirm-details { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+                       padding:1.25rem; max-width:480px; margin:0 auto 1.5rem; text-align:left; }
+    .confirm-row { display:flex; justify-content:space-between; padding:.5rem 0;
+                   border-bottom:1px solid var(--border); font-size:.9rem; }
+    .confirm-row:last-child { border-bottom:none; font-weight:700; font-size:1rem; }
+
     /* ── AUTH FORMS ── */
     .auth-wrap { min-height: calc(100vh - 56px); display:flex; align-items:center; justify-content:center; padding:2rem; }
     .auth-card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
@@ -285,38 +325,127 @@
 <!-- CART -->
 <div id="page-cart" class="page">
   <div class="container">
-    <h2 style="margin-bottom:1.5rem">🛒 Shopping Cart</h2>
-    <div class="cart-layout">
-      <div id="cartItems"></div>
-      <div class="cart-summary">
-        <h3>Order Summary</h3>
-        <div id="cartSummaryRows"></div>
-        <button class="btn btn-primary" style="width:100%;margin-top:1rem" onclick="showCheckout()">
-          Proceed to Checkout
-        </button>
-        <button class="btn btn-sm" style="width:100%;margin-top:.5rem;background:transparent;border:1px solid var(--border)"
-                onclick="clearCart()">Clear Cart</button>
+
+    <!-- ── STEP INDICATOR ── -->
+    <div class="stepper" id="checkoutStepper">
+      <div class="step active" id="step1ind"><span class="num">1</span> Cart</div>
+      <div class="step-line" id="line1"></div>
+      <div class="step" id="step2ind"><span class="num">2</span> Payment</div>
+      <div class="step-line" id="line2"></div>
+      <div class="step" id="step3ind"><span class="num">3</span> Confirmation</div>
+    </div>
+
+    <!-- ═══ STEP 1: CART ═══ -->
+    <div id="step1">
+      <h2 style="margin-bottom:1.5rem">🛒 Shopping Cart</h2>
+      <div class="cart-layout">
+        <div id="cartItems"></div>
+        <div class="cart-summary">
+          <h3>Order Summary</h3>
+          <div id="cartSummaryRows"></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:1rem" onclick="goToPayment()">
+            Proceed to Checkout →
+          </button>
+          <button class="btn btn-sm" style="width:100%;margin-top:.5rem;background:transparent;border:1px solid var(--border)"
+                  onclick="clearCart()">Clear Cart</button>
+        </div>
       </div>
     </div>
-    <!-- Checkout Panel -->
-    <div id="checkoutPanel" style="display:none;margin-top:2rem;background:var(--card);padding:1.5rem;border-radius:var(--radius);box-shadow:var(--shadow);max-width:500px">
-      <h3 style="margin-bottom:1rem">Checkout</h3>
-      <div class="form-group">
-        <label>Payment Method</label>
-        <select id="paymentMethod">
-          <option value="CREDIT_CARD">Credit Card</option>
-          <option value="DEBIT_CARD">Debit Card</option>
-          <option value="UPI">UPI</option>
-          <option value="NET_BANKING">Net Banking</option>
-          <option value="COD">Cash on Delivery</option>
-        </select>
+
+    <!-- ═══ STEP 2: PAYMENT ═══ -->
+    <div id="step2" style="display:none;max-width:680px">
+      <h2 style="margin-bottom:1.75rem">💳 Payment & Purchase</h2>
+
+      <!-- Delivery address -->
+      <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem;margin-bottom:1.25rem">
+        <h3 style="font-size:1rem;margin-bottom:.9rem">📦 Delivery Address</h3>
+        <div id="addressList" style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:.75rem"></div>
+        <!-- inline add address -->
+        <details id="addAddrDetails" style="margin-top:.5rem">
+          <summary style="cursor:pointer;font-size:.88rem;color:var(--primary);font-weight:600">+ Add new address</summary>
+          <div style="margin-top:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+            <div class="form-group"><label>Full Name</label><input id="aFullName" type="text" placeholder="Jane Doe"/></div>
+            <div class="form-group"><label>Phone</label><input id="aPhone" type="tel" placeholder="+1 555 000"/></div>
+            <div class="form-group" style="grid-column:1/-1"><label>Address Line 1</label><input id="aLine1" type="text" placeholder="123 Main St"/></div>
+            <div class="form-group"><label>City</label><input id="aCity" type="text"/></div>
+            <div class="form-group"><label>State</label><input id="aState" type="text"/></div>
+            <div class="form-group"><label>Postal Code</label><input id="aPostal" type="text"/></div>
+            <div class="form-group"><label>Country</label><input id="aCountry" type="text" value="US"/></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveAddress()">Save Address</button>
+        </details>
       </div>
-      <div class="form-group">
-        <label>Order Notes (optional)</label>
-        <input id="orderNotes" type="text" placeholder="Leave a note…" />
+
+      <!-- Payment method -->
+      <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem;margin-bottom:1.25rem">
+        <h3 style="font-size:1rem;margin-bottom:.25rem">💳 Select Payment Method</h3>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">Initiate payment with the right option</p>
+        <div class="pay-methods">
+          <div class="pay-card selected" onclick="selectPayment('CREDIT_CARD',this)">
+            <div class="pay-icon">💳</div><div class="pay-name">Credit Card</div>
+          </div>
+          <div class="pay-card" onclick="selectPayment('DEBIT_CARD',this)">
+            <div class="pay-icon">🏦</div><div class="pay-name">Debit Card</div>
+          </div>
+          <div class="pay-card" onclick="selectPayment('UPI',this)">
+            <div class="pay-icon">📱</div><div class="pay-name">UPI</div>
+          </div>
+          <div class="pay-card" onclick="selectPayment('NET_BANKING',this)">
+            <div class="pay-icon">🌐</div><div class="pay-name">Net Banking</div>
+          </div>
+          <div class="pay-card" onclick="selectPayment('COD',this)">
+            <div class="pay-icon">💵</div><div class="pay-name">Cash on Delivery</div>
+          </div>
+        </div>
       </div>
-      <button class="btn btn-success" style="width:100%" onclick="placeOrder()">✅ Place Order</button>
+
+      <!-- Gift points -->
+      <div class="gift-box" id="giftBox">
+        <div class="gift-icon">🎁</div>
+        <div style="flex:1">
+          <label>Redeem Gift Points — <strong id="giftPointsLabel">0 pts</strong> of <span id="giftPointsMax">0</span> available</label>
+          <input type="range" id="giftPointsSlider" min="0" max="0" value="0" step="10"
+                 oninput="updateGiftPoints(this.value)"/>
+          <div style="font-size:.78rem;color:#6929c4;margin-top:.25rem">
+            Redeeming <span id="giftRedeem">0</span> pts saves you $<span id="giftSaving">0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group">
+        <label>Order Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <input id="orderNotes" type="text" placeholder="Special instructions, gift message…" />
+      </div>
+
+      <!-- Order total preview -->
+      <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem;margin-bottom:1.25rem">
+        <div class="summary-row"><span>Subtotal</span><span id="pay-subtotal">$0.00</span></div>
+        <div class="summary-row"><span>Gift Points Discount</span><span id="pay-discount" style="color:var(--success)">-$0.00</span></div>
+        <div class="summary-row"><span>Shipping</span><span style="color:var(--success)">Free</span></div>
+        <div class="summary-row total"><span>Total Payable</span><span id="pay-total">$0.00</span></div>
+      </div>
+
+      <div style="display:flex;gap:1rem">
+        <button class="btn btn-sm" style="border:1px solid var(--border);background:transparent" onclick="goToCart()">← Back to Cart</button>
+        <button class="btn btn-success" style="flex:1" onclick="placeOrder()">✅ Complete Payment</button>
+      </div>
     </div>
+
+    <!-- ═══ STEP 3: CONFIRMATION ═══ -->
+    <div id="step3" style="display:none">
+      <div class="confirm-wrap">
+        <div class="check">✅</div>
+        <h2>Order Placed Successfully!</h2>
+        <p>Thank you for your purchase. Your order is being processed.</p>
+        <div class="confirm-details" id="confirmDetails"></div>
+        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="showPage('orders')">View My Orders</button>
+          <button class="btn btn-outline" style="color:var(--text);border-color:var(--border)" onclick="showPage('products')">Continue Shopping</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -680,30 +809,42 @@ async function addToCart(productId, e) {
   if (btn) { btn.disabled=false; btn.textContent='Add to Cart'; }
   if (r.ok) {
     toast('Added to cart! 🛒', 'success');
-    updateCartBadge((r.data.data?.totalItems) || cartCount+1);
+    refreshCartBadge();
   } else {
     toast(r.data.message || 'Failed to add to cart', 'error');
   }
 }
 
+// ── State for checkout flow ──────────────────────────────────
+let checkoutCart = null;
+let selectedPayment = 'CREDIT_CARD';
+let selectedAddressId = null;
+let giftPointsAvailable = 0;
+
 async function loadCart() {
+  // Reset to step 1 whenever cart page is opened
+  goToCart();
   const el = document.getElementById('cartItems');
   const sr = document.getElementById('cartSummaryRows');
   el.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
-  if (!token) { el.innerHTML='<div class="empty-state"><div class="icon">🔐</div><p>Please log in to view your cart.</p></div>'; return; }
+  if (!token) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🔐</div><p>Please log in to view your cart.</p></div>';
+    sr.innerHTML = ''; return;
+  }
   const r = await api('GET', '/api/v1/cart');
   if (!r.ok) { el.innerHTML='<div class="empty-state"><p>Could not load cart.</p></div>'; return; }
-  const cart = r.data.data;
-  const items = cart?.items || [];
-  updateCartBadge(cart?.totalItems || 0);
+  checkoutCart = r.data.data;
+  const items = checkoutCart?.items || [];
+  updateCartBadge(checkoutCart?.totalItems || 0);
   if (items.length === 0) {
     el.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>Your cart is empty.</p>
       <button class="btn btn-primary" onclick="showPage('products')" style="margin-top:1rem">Browse Books</button></div>`;
-    sr.innerHTML=''; return;
+    sr.innerHTML = ''; return;
   }
   el.innerHTML = items.map(i => {
-    const ph = `<div class="ci-placeholder">📖</div>`;
-    const img = i.productImageUrl ? `<img src="${escHtml(i.productImageUrl)}" alt="${escHtml(i.productTitle)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : '';
+    const img = i.productImageUrl
+      ? `<img src="${escHtml(i.productImageUrl)}" alt="${escHtml(i.productTitle)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
     return `<div class="cart-item">
       ${img}<div class="ci-placeholder" style="${i.productImageUrl?'display:none':''}">📖</div>
       <div class="ci-info">
@@ -722,9 +863,9 @@ async function loadCart() {
     </div>`;
   }).join('');
   sr.innerHTML = `
-    <div class="summary-row"><span>Items (${cart.totalItems})</span><span>$${(+cart.totalAmount).toFixed(2)}</span></div>
+    <div class="summary-row"><span>Items (${checkoutCart.totalItems})</span><span>$${(+checkoutCart.totalAmount).toFixed(2)}</span></div>
     <div class="summary-row"><span>Shipping</span><span style="color:var(--success)">Free</span></div>
-    <div class="summary-row total"><span>Total</span><span>$${(+cart.totalAmount).toFixed(2)}</span></div>`;
+    <div class="summary-row total"><span>Total</span><span>$${(+checkoutCart.totalAmount).toFixed(2)}</span></div>`;
 }
 
 async function updateQty(productId, qty) {
@@ -741,23 +882,150 @@ async function clearCart() {
   const r = await api('DELETE', '/api/v1/cart');
   if (r.ok) { toast('Cart cleared'); loadCart(); } else toast('Failed to clear cart', 'error');
 }
-function showCheckout() {
-  const p = document.getElementById('checkoutPanel');
-  p.style.display = p.style.display==='none' ? 'block' : 'none';
-}
-async function placeOrder() {
-  const method = document.getElementById('paymentMethod').value;
-  const notes = document.getElementById('orderNotes').value;
-  const r = await api('POST', '/api/v1/orders/checkout', {
-    paymentMethod: method, notes, giftPointsToRedeem: 0
+
+// ── Stepper helpers ──────────────────────────────────────────
+function setStep(n) {
+  ['step1','step2','step3'].forEach((id,i) => {
+    document.getElementById(id).style.display = (i+1===n) ? 'block' : 'none';
   });
-  if (r.ok) {
-    toast('Order placed! 🎉', 'success');
-    document.getElementById('checkoutPanel').style.display = 'none';
-    loadCart();
-    setTimeout(() => showPage('orders'), 1000);
+  ['step1ind','step2ind','step3ind'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'step' + (i+1<n ? ' done' : i+1===n ? ' active' : '');
+  });
+  ['line1','line2'].forEach((id,i) => {
+    document.getElementById(id).className = 'step-line' + (i+1<n ? ' done' : '');
+  });
+}
+function goToCart() { setStep(1); }
+
+// ── Step 2: Payment ──────────────────────────────────────────
+async function goToPayment() {
+  if (!checkoutCart || (checkoutCart.items||[]).length === 0) {
+    toast('Your cart is empty', 'error'); return;
+  }
+  setStep(2);
+
+  // Load addresses
+  const rAddr = await api('GET', '/api/v1/users/me/addresses');
+  const addresses = rAddr.ok ? (rAddr.data.data || []) : [];
+  const addrList = document.getElementById('addressList');
+  if (addresses.length === 0) {
+    addrList.innerHTML = '<p style="font-size:.85rem;color:var(--muted)">No saved addresses. Add one below.</p>';
+    document.getElementById('addAddrDetails').open = true;
+    selectedAddressId = null;
   } else {
-    toast(r.data.message || 'Checkout failed', 'error');
+    selectedAddressId = addresses[0].id;
+    addrList.innerHTML = addresses.map(a => `
+      <label style="display:flex;align-items:flex-start;gap:.6rem;padding:.75rem;border:2px solid ${a.id===selectedAddressId?'var(--primary)':'var(--border)'};
+             border-radius:var(--radius);cursor:pointer;background:${a.id===selectedAddressId?'#edf5ff':'var(--card)'}" id="addr-${a.id}" onclick="selectAddress(${a.id})">
+        <input type="radio" name="addr" value="${a.id}" ${a.id===selectedAddressId?'checked':''} style="margin-top:.2rem">
+        <div style="font-size:.88rem">
+          <strong>${escHtml(a.fullName)}</strong><br>
+          ${escHtml(a.addressLine1)}${a.city?', '+escHtml(a.city):''}${a.state?', '+escHtml(a.state):''}
+          ${a.postalCode?' '+escHtml(a.postalCode):''}${a.country?', '+escHtml(a.country):''}<br>
+          <span style="color:var(--muted)">${escHtml(a.phone||'')}</span>
+        </div>
+      </label>`).join('');
+  }
+
+  // Gift points
+  const rUser = await api('GET', '/api/v1/users/me');
+  giftPointsAvailable = rUser.ok ? (rUser.data.data?.giftPoints || 0) : 0;
+  const slider = document.getElementById('giftPointsSlider');
+  slider.max = giftPointsAvailable;
+  slider.value = 0;
+  document.getElementById('giftPointsMax').textContent = giftPointsAvailable;
+  updateGiftPoints(0);
+
+  // Totals
+  updatePaymentTotals();
+}
+
+function selectAddress(id) {
+  selectedAddressId = id;
+  document.querySelectorAll('#addressList label').forEach(el => {
+    const isSelected = el.id === 'addr-' + id;
+    el.style.borderColor = isSelected ? 'var(--primary)' : 'var(--border)';
+    el.style.background  = isSelected ? '#edf5ff' : 'var(--card)';
+  });
+}
+
+function selectPayment(method, el) {
+  selectedPayment = method;
+  document.querySelectorAll('.pay-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updatePaymentTotals();
+}
+
+function updateGiftPoints(val) {
+  const pts = parseInt(val) || 0;
+  const saving = (pts / 100).toFixed(2); // 100 pts = $1.00
+  document.getElementById('giftPointsLabel').textContent = pts + ' pts';
+  document.getElementById('giftRedeem').textContent = pts;
+  document.getElementById('giftSaving').textContent = saving;
+  updatePaymentTotals();
+}
+
+function updatePaymentTotals() {
+  const subtotal = parseFloat(checkoutCart?.totalAmount || 0);
+  const pts = parseInt(document.getElementById('giftPointsSlider')?.value || 0);
+  const discount = pts / 100;
+  const total = Math.max(0, subtotal - discount);
+  document.getElementById('pay-subtotal').textContent = '$' + subtotal.toFixed(2);
+  document.getElementById('pay-discount').textContent = '-$' + discount.toFixed(2);
+  document.getElementById('pay-total').textContent = '$' + total.toFixed(2);
+}
+
+async function saveAddress() {
+  const body = {
+    fullName:    document.getElementById('aFullName').value.trim(),
+    addressLine1:document.getElementById('aLine1').value.trim(),
+    city:        document.getElementById('aCity').value.trim(),
+    state:       document.getElementById('aState').value.trim(),
+    postalCode:  document.getElementById('aPostal').value.trim(),
+    country:     document.getElementById('aCountry').value.trim(),
+    phone:       document.getElementById('aPhone').value.trim(),
+    isDefault:   true
+  };
+  if (!body.fullName || !body.addressLine1) { toast('Full name and address are required', 'error'); return; }
+  const r = await api('POST', '/api/v1/users/me/addresses', body);
+  if (r.ok) {
+    toast('Address saved!', 'success');
+    document.getElementById('addAddrDetails').open = false;
+    goToPayment(); // reload step 2 with the new address
+  } else {
+    toast(r.data.message || 'Failed to save address', 'error');
+  }
+}
+
+// ── Step 3: Place order ──────────────────────────────────────
+async function placeOrder() {
+  const method = selectedPayment;
+  const notes  = document.getElementById('orderNotes').value;
+  const pts    = parseInt(document.getElementById('giftPointsSlider').value) || 0;
+  const body   = { paymentMethod: method, notes, giftPointsToRedeem: pts };
+  if (selectedAddressId) body.shippingAddressId = selectedAddressId;
+
+  const btn = document.querySelector('#step2 .btn-success');
+  if (btn) { btn.disabled = true; btn.textContent = 'Processing…'; }
+  const r = await api('POST', '/api/v1/orders/checkout', body);
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Complete Payment'; }
+
+  if (r.ok) {
+    const order = r.data.data;
+    updateCartBadge(0);
+    setStep(3);
+    // Populate confirmation
+    const payLabels = {CREDIT_CARD:'Credit Card',DEBIT_CARD:'Debit Card',UPI:'UPI',NET_BANKING:'Net Banking',COD:'Cash on Delivery'};
+    document.getElementById('confirmDetails').innerHTML = `
+      <div class="confirm-row"><span>Order Number</span><strong>#${escHtml(order.orderNumber||String(order.id))}</strong></div>
+      <div class="confirm-row"><span>Payment Method</span><span>${payLabels[method]||method}</span></div>
+      <div class="confirm-row"><span>Status</span><span class="badge badge-${(order.status||'').toLowerCase()}">${order.status||'CONFIRMED'}</span></div>
+      <div class="confirm-row"><span>Items</span><span>${(order.items||[]).length} book(s)</span></div>
+      <div class="confirm-row"><span>Total Paid</span><span>$${(+order.totalAmount).toFixed(2)}</span></div>`;
+    toast('Order placed! 🎉', 'success');
+  } else {
+    toast(r.data.message || 'Checkout failed. Please try again.', 'error');
   }
 }
 
