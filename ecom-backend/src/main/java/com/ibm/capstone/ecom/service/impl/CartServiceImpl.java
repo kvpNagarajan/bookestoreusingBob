@@ -33,9 +33,10 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CartResponse getCart(Long userId) {
         Cart cart = getOrCreateCart(userId);
-        return toResponse(cart);
+        return toResponse(cartRepository.findByUserIdWithItems(userId).orElse(cart));
     }
 
     @Override
@@ -56,7 +57,7 @@ public class CartServiceImpl implements CartService {
 
         item.setQuantity(item.getQuantity() + request.getQuantity());
         cartItemRepository.save(item);
-        return toResponse(cartRepository.findById(cart.getId()).orElseThrow());
+        return toResponse(cartRepository.findByIdWithItems(cart.getId()).orElseThrow());
     }
 
     @Override
@@ -71,7 +72,7 @@ public class CartServiceImpl implements CartService {
             item.setQuantity(quantity);
             cartItemRepository.save(item);
         }
-        return toResponse(cartRepository.findById(cart.getId()).orElseThrow());
+        return toResponse(cartRepository.findByIdWithItems(cart.getId()).orElseThrow());
     }
 
     @Override
@@ -80,7 +81,7 @@ public class CartServiceImpl implements CartService {
         Cart cart = getOrCreateCart(userId);
         cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .ifPresent(cartItemRepository::delete);
-        return toResponse(cartRepository.findById(cart.getId()).orElseThrow());
+        return toResponse(cartRepository.findByIdWithItems(cart.getId()).orElseThrow());
     }
 
     @Override
@@ -92,6 +93,7 @@ public class CartServiceImpl implements CartService {
         });
     }
 
+    @Transactional
     private Cart getOrCreateCart(Long userId) {
         return cartRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)
