@@ -1,0 +1,43 @@
+﻿# ===========================
+# Java / Maven
+# ===========================
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.tmp
+.mvn/
+
+# ===========================
+# IDE
+# ===========================
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+
+# ===========================
+# Environment & Secrets -- NEVER commit these
+# ===========================
+.env
+.env.*
+*.env
+application-local.properties
+application-prod.properties
+
+# ===========================
+# Seed / temp files
+# ===========================
+ecom-backend/seed/check.json
+ecom-backend/api-docs.json
+
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db

@@ -1,0 +1,40 @@
+# ============================================================
+# Custom PostgreSQL 16 image — built on Red Hat UBI9
+# Uses PostgreSQL Global Development Group (PGDG) RPM repo
+# Non-root execution, principle of least privilege
+# ============================================================
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+# Install PostgreSQL 16 from the official PGDG repository
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    dnf install -y postgresql16-server postgresql16 --nodocs \
+        --setopt=install_weak_deps=0 && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# Symlink binaries to a well-known PATH location
+RUN ln -sf /usr/pgsql-16/bin/initdb        /usr/local/bin/initdb && \
+    ln -sf /usr/pgsql-16/bin/pg_ctl        /usr/local/bin/pg_ctl && \
+    ln -sf /usr/pgsql-16/bin/psql          /usr/local/bin/psql && \
+    ln -sf /usr/pgsql-16/bin/postgres      /usr/local/bin/postgres && \
+    ln -sf /usr/pgsql-16/bin/pg_isready    /usr/local/bin/pg_isready
+
+# Create data directory owned by the postgres user (uid 26 in UBI9)
+RUN mkdir -p /var/lib/pgsql/data /docker-entrypoint-initdb.d && \
+    chown -R 26:26 /var/lib/pgsql /docker-entrypoint-initdb.d
+
+# Copy the entrypoint script
+COPY docker/postgres-entrypoint.sh /usr/local/bin/postgres-entrypoint.sh
+RUN chmod +x /usr/local/bin/postgres-entrypoint.sh && \
+    chown 26:26 /usr/local/bin/postgres-entrypoint.sh
+
+USER 26
+ENV PGDATA=/var/lib/pgsql/data
+VOLUME ["/var/lib/pgsql/data"]
+
+EXPOSE 5432
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=8 \
+    CMD pg_isready -h 127.0.0.1 -p 5432 || exit 1
+
+ENTRYPOINT ["/usr/local/bin/postgres-entrypoint.sh"]

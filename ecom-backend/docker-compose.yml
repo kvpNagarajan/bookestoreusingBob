@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL (custom UBI9-minimal based image) ─────────────
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: ecom-postgres:local
+    container_name: ecom-postgres
+    user: "26"          # postgres uid in UBI9 (non-root)
+    environment:
+      POSTGRESQL_USER: ${DB_USERNAME}
+      POSTGRESQL_PASSWORD: ${DB_PASSWORD}
+      POSTGRESQL_DATABASE: ${DB_NAME:-ecomdb}
+    volumes:
+      - pgdata:/var/lib/pgsql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U ${DB_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+  # ── Spring Boot App ──────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ecom-app:local
+    container_name: ecom-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-ecomdb}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # Override server.address so Tomcat binds to all container interfaces.
+      # The host-side port is still locked to 127.0.0.1 (see ports above).
+      SERVER_ADDRESS: 0.0.0.0
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
